@@ -28,7 +28,6 @@ public class Product
     public required string Image { get; set; }
 
     [Required]
-    [MaxLength(20)]
     public required decimal Price { get; set; }
 
 }

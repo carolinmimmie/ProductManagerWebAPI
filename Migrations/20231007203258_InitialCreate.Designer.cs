@@ -11,7 +11,7 @@ using ProductManagerWebAPI.Data;
 namespace ProductManagerWebAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20231007134037_InitialCreate")]
+    [Migration("20231007203258_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -48,7 +48,6 @@ namespace ProductManagerWebAPI.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<decimal>("Price")
-                        .HasMaxLength(20)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Sku")

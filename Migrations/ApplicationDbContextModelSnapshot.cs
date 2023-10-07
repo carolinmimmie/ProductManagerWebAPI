@@ -45,7 +45,6 @@ namespace ProductManagerWebAPI.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<decimal>("Price")
-                        .HasMaxLength(20)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Sku")
