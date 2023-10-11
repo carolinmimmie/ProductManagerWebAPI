@@ -3,65 +3,215 @@
 using ProductManagerWebAPI.Domain;
 using Microsoft.AspNetCore.Mvc;
 using ProductManagerWebAPI.Data;
+using System.ComponentModel.DataAnnotations;
 
 namespace ProductManagerWebAPI.Controllers;
 
+// GET | POST | PUT | DELETE ... /students -> StudentsController
+
+//Detta är en attribut som märker klassen StudentsController som en Web API-kontroller. 
 [ApiController]
+// Detta är ett attribut som används för att definiera ruttens basväg för denna kontroller.
 [Route("[controller]")]
+
+//Detta deklarerar själva kontrollerklassen och ärver från ControllerBase. 
+//ControllerBase är en grundläggande kontrollerklass som används för API:er.
 public class ProductsController : ControllerBase
 {
+
+    // Detta skapar ett privat fält (context) som håller en instans av ApplicationDbContext.
+    // ApplicationDbContext används för att interagera med databasen. readonly betyder att 
+    // värdet av context inte kan ändras efter att det har tilldelats i konstruktorn.
     private readonly ApplicationDbContext context;
 
+
+    // Detta är konstruktorn för StudentsController. 
+    // Den tar in en parameter av typen ApplicationDbContext
+    // och använder den för att sätta värdet på det privata fältet context. 
+    // Konstruktorn spelar en viktig roll när en ny instans av StudentsController skapas,
+    // eftersom den används för att ställa in objektet med den nödvändiga databaskontexten.
     public ProductsController(ApplicationDbContext context)
     {
         this.context = context;
     }
 
-    // Följande kommer nu att ske när det kommer in ett HTTP GET-anrop från klienten till /products
-    // ●	En instans av ProductsController skapas för att hantera anropet. 
-    // ●	Konstruktorn för ProductsController vill ha in en instans av ApplicationDbContext.
-    // ●	DI-containern skapar en sådan instans automatiskt och skickar in denna i konstruktorn för ProductsController.
-    // ●	Därefter anropas GetProducts() då denna är markerad med [HttpGet].
-
-    [HttpGet]
-    public IEnumerable<Product> GetProducts()
-    {
-        //Vi kan nu använda vårt DbContext för att hämta filmer från databasen, för att sen slutligen returnera dessa till klienten:  
-        var products = context.Product.ToList();
-
-        return products;
-    }
-
-    // POST http://localhost:8000/products
+    // POST /products
+    // {
+    //   "name": "Vera",
+    //   "sku": "AAA111",
+    //   "description": "Black leather jacket",
+    //   "image": "img//url"
+    //   "price": 199
+    // }
     [HttpPost]
-    public IActionResult AddProduct(Product product)
+    public ActionResult<ProductDto> CreateProduct(CreateProductRequest createProductRequest)
     {
+        // 1 - Skapa ett objekt av typ Student och kopiera över värden från createStudentRequest
+        var product = new Product
+        {
+            Name = createProductRequest.Name,
+            Sku = createProductRequest.Sku,
+            Description = createProductRequest.Description,
+            Image = createProductRequest.Image,
+            Price = createProductRequest.Price
+        };
+
+        // 2 - Spara studerande till databasen
+
         context.Product.Add(product);
 
         context.SaveChanges();
 
-        return Created("", product);
-    }
-    // DELETE http://localhost:8000/products/ABC123
-    [HttpDelete("{sku}")]
-    public IActionResult DeleteProduct(string sku)
-    {
-        var product = context.Product.FirstOrDefault(x => x.Sku == sku);//Plocka ut produkt baserat på sku
-
-        if (product == null)// om produkt inte finns
+        // 3 - För över information från entitet till DTO och returnera till klienten
+        var productDto = new ProductDto
         {
-            return NotFound(); // returnera 404 Not Found
-        }
+            Id = product.Id,
+            Name = product.Name,
+            Sku = product.Sku,
+            Description = product.Description,
+            Image = product.Image,
+            Price = product.Price
+        };
 
-        context.Product.Remove(product);// om produkt finns så vill vi radera
-        // Detta skickar en SQL DELETE till databashanteraren
-        // Exempelvis "DELETE FROM prodct WHERE SKu = ABC123"
+        return Created("", productDto); // 201 Created
+    }
+
+    // GET /products
+    [HttpGet]
+    public IEnumerable<ProductDto> GetProducts()
+    {
+        var products = context.Product.ToList();
+
+        var productsDto = products.Select(x => new ProductDto//skapar en ny samling av StudentDto
+        {
+            Id = x.Id,
+            Name = x.Name,
+            Sku = x.Sku,
+            Description = x.Description,
+            Image = x.Image,
+            Price = x.Price
+        });
+
+        return productsDto; // 200 OK
+    }
+
+    // GET /products/{sku}
+    [HttpGet("{sku}")]
+    public ActionResult<ProductDto> GetProduct(string sku)
+    {
+        var product = context.Product.FirstOrDefault(x => x.Sku == sku);//letar efter den studerande 
+
+        if (product is null) // om studerander inte finns
+            return NotFound(); // returnera 404 Not Found
+
+        var productDto = new ProductDto // om den studerande fanns vill vi mappa detaljerna från den studerande till en Dto
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Sku = product.Sku,
+            Description = product.Description,
+            Image = product.Image,
+            Price = product.Price
+        };
+
+        return productDto; //retuerna 200 OK plis informationen ovan om studerande
+    }
+
+    // DELETE /students/{id}
+    [HttpDelete("{sku}")]
+    public ActionResult DeleteProduct (string sku)
+    {
+        var product = context.Product.FirstOrDefault(x => x.Sku == sku);
+
+        if (product is null)
+            return NotFound(); // 404 Not Found        
+
+        context.Product.Remove(product);
+
+        // SQL DELETE skickas till databasen för att radera den studerande
         context.SaveChanges();
 
-        return NoContent(); // returnera204 No Content
+        return NoContent(); // 204 No Content
     }
 
+    // DET SOM SKICKAS IN I JSON-DATAN SOM SKICKAS IN I BODY I THUNDER CLIENT
+    // PUT /students/1
+    // 
+    // {
+    //   "id": 1,
+    //   "firstName": "Jane",
+    //   "lastName": "Doe",
+    //   "socialSecurityNumber": "19900101-2010",
+    //   "email": "jane@outlook.com"
+    // }
+    // [HttpPut("{id}")]
+    // public ActionResult UpdateStudent(int id, UpdateStudentRequest updateStudentRequest) // id och inkommande data
+    // {
+    //     if (id != updateStudentRequest.Id) // om id från body inte stämmer överrens med updatedstudendRequest Id
+    //         return BadRequest(); // returnera 400 Bad Request
+
+    //     var student = context.Students.FirstOrDefault(x => x.Id == id); // letar efter id i databasen
+
+    //     if (student is null) // om det inte hittas 
+    //         return NotFound(); //  returnera 404 Not Found        
+
+    //     // om den studerande fanns då vill vi uppdatera egenskaperna så de matchar datat vi fick in.
+    //     student.FirstName = updateStudentRequest.FirstName;
+    //     student.LastName = updateStudentRequest.LastName;
+    //     student.SocialSecurityNumber = updateStudentRequest.SocialSecurityNumber;
+    //     student.Email = updateStudentRequest.Email;
+
+    //     // Skickar SQL UPDATE till databasen
+    //     context.SaveChanges();
+
+    //     return NoContent(); // 204 No Content
+    // }
+}
+
+// public class UpdateProductRequest
+// {
+//     public int Id { get; set; }
+//     public string Name { get; set; }
+
+//     public string Sku { get; set; }
+
+//     public string Description { get; set; }
+
+//     public string Image { get; set; }
+
+//     public required decimal Price { get; set; }
+// }
+
+public class ProductDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+
+    public string Sku { get; set; }
+
+    public string Description { get; set; }
+
+    public string Image { get; set; }
+
+    public required decimal Price { get; set; }
+}
 
 
+//Dto-klass
+public class CreateProductRequest
+{
+    [Required]
+    public string Name { get; set; }
 
+    [Required]
+    public string Sku { get; set; }
+
+    [Required]
+    public string Description { get; set; }
+
+    [Required]
+    public string Image { get; set; }
+
+    [Required]
+    public required decimal Price { get; set; }
 }
