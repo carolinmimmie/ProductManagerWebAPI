@@ -76,12 +76,24 @@ public class ProductsController : ControllerBase
         return Created("", productDto); // 201 Created
     }
 
-    // GET /products
+    // GET /products          -  hämta alla produkter
+    // GET /products?name=Dino -  hämta alla produkter av specifikt namn
     [HttpGet]
-    public IEnumerable<ProductDto> GetProducts()
+    public IEnumerable<ProductDto> GetProducts([FromQuery] string? name)//string? säger att den kan va null eller namn
     {
-        var products = context.Product.ToList();
 
+        IEnumerable<Product> products;
+
+        if (string.IsNullOrEmpty(name))
+        {
+            products = context.Product.ToList(); // Hämta alla produkter från databasen
+        }
+        else
+        {
+            products = context.Product.Where(x => x.Name == name);
+        }
+
+        // Konvertera produkterna till ProductDto-format
         var productsDto = products.Select(x => new ProductDto//skapar en ny samling av StudentDto
         {
             Id = x.Id,
@@ -119,7 +131,7 @@ public class ProductsController : ControllerBase
 
     // DELETE /students/{id}
     [HttpDelete("{sku}")]
-    public ActionResult DeleteProduct (string sku)
+    public ActionResult DeleteProduct(string sku)
     {
         var product = context.Product.FirstOrDefault(x => x.Sku == sku);
 
