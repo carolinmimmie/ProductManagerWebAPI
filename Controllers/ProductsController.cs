@@ -156,43 +156,44 @@ public class ProductsController : ControllerBase
     //   "socialSecurityNumber": "19900101-2010",
     //   "email": "jane@outlook.com"
     // }
-    // [HttpPut("{id}")]
-    // public ActionResult UpdateStudent(int id, UpdateStudentRequest updateStudentRequest) // id och inkommande data
-    // {
-    //     if (id != updateStudentRequest.Id) // om id från body inte stämmer överrens med updatedstudendRequest Id
-    //         return BadRequest(); // returnera 400 Bad Request
+    [HttpPut("{sku}")]
+    public IActionResult UpdateProduct(string sku, updateProductRequest updateProductRequest) // sku och inkommande data
+    {
+        if (sku != updateProductRequest.Sku) // om id från body inte stämmer överrens med updatedstudendRequest Id
+            return BadRequest(); // returnera 400 Bad Request
 
-    //     var student = context.Students.FirstOrDefault(x => x.Id == id); // letar efter id i databasen
+        var product = context.Product.FirstOrDefault(x => x.Sku == sku); // letar efter id i databasen
 
-    //     if (student is null) // om det inte hittas 
-    //         return NotFound(); //  returnera 404 Not Found        
+        if (product is null) // om det inte hittas 
+            return NotFound(); //  returnera 404 Not Found        
 
-    //     // om den studerande fanns då vill vi uppdatera egenskaperna så de matchar datat vi fick in.
-    //     student.FirstName = updateStudentRequest.FirstName;
-    //     student.LastName = updateStudentRequest.LastName;
-    //     student.SocialSecurityNumber = updateStudentRequest.SocialSecurityNumber;
-    //     student.Email = updateStudentRequest.Email;
+        // om den studerande fanns då vill vi uppdatera egenskaperna så de matchar datat vi fick in.
+        product.Name = updateProductRequest.Name;
+        product.Sku = updateProductRequest.Sku;
+        product.Description = updateProductRequest.Description;
+        product.Image = updateProductRequest.Image;
+        product.Price = updateProductRequest.Price;
 
-    //     // Skickar SQL UPDATE till databasen
-    //     context.SaveChanges();
+        // Skickar SQL UPDATE till databasen
+        context.SaveChanges();
 
-    //     return NoContent(); // 204 No Content
-    // }
+        return NoContent(); // 204 No Content
+    }
 }
 
-// public class UpdateProductRequest
-// {
-//     public int Id { get; set; }
-//     public string Name { get; set; }
+public class updateProductRequest
+{
+    public int Id { get; set; }  // id behövs för att kunna hitta, jämföra och uppdatera fordon
+    public string Name { get; set; }
 
-//     public string Sku { get; set; }
+    public string Sku { get; set; }
 
-//     public string Description { get; set; }
+    public string Description { get; set; }
 
-//     public string Image { get; set; }
+    public string Image { get; set; }
 
-//     public required decimal Price { get; set; }
-// }
+    public required decimal Price { get; set; }
+}
 
 public class ProductDto
 {
